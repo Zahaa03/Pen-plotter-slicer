@@ -1,0 +1,42 @@
+name: Build Pen Plotter for Windows
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "pen_plotter_app.py"
+      - ".github/workflows/pen-plotter-windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python for the build
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install packager
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: Build standalone app
+        run: >-
+          python -m PyInstaller --noconfirm --clean --onefile --windowed
+          --name "Pen Plotter" pen_plotter_app.py
+
+      - name: Create downloadable zip
+        shell: pwsh
+        run: Compress-Archive -Path "dist/Pen Plotter.exe" -DestinationPath "dist/PenPlotter-windows-x64.zip" -Force
+
+      - name: Upload Windows app
+        uses: actions/upload-artifact@v4
+        with:
+          name: PenPlotter-windows-x64
+          path: dist/PenPlotter-windows-x64.zip
+          if-no-files-found: error
